@@ -23,34 +23,40 @@ Rock(A,X) defeats Scissors(C,Z),
 Paper(B,Y) defeats Rock(A,X)
 Scissors(C,Z) defeats Paper (B,Y), and
 */
-case class R(opp: String, me: String)
+sealed trait Shape
+case object Rck extends Shape
+case object Ppr extends Shape
+case object Scs extends Shape
+
+val S = Map("A" -> Rck, "B" -> Ppr, "C" -> Scs, "X" -> Rck, "Y" -> Ppr, "Z" -> Scs)
+case class R(opp: Shape, me: Shape)
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day02/input.txt"))
-val rounds = bufferedSource.getLines().map(_.split(' ')).map(a => R(a(0), a(1))).toVector
+val rounds = bufferedSource.getLines().map(_.split(' ')).map(a => R(S(a(0)), S(a(1)))).toVector
 
 bufferedSource.close
 
-val shapeScores = Map("A" -> 1, "X" -> 1, "B" -> 2, "Y" -> 2, "C" -> 3, "Z" -> 3)
+val shapeScores = Map(Rck -> 1, Ppr -> 2, Scs -> 3)
 val roundScores = Map(
-  R("A", "X") -> 3, R("A", "Y") -> 6, R("A", "Z") -> 0,
-  R("B", "X") -> 0, R("B", "Y") -> 3, R("B", "Z") -> 6,
-  R("C", "X") -> 6, R("C", "Y") -> 0, R("C", "Z") -> 3)
+  R(Rck, Rck) -> 3, R(Rck, Ppr) -> 6, R(Rck, Scs) -> 0,
+  R(Ppr, Rck) -> 0, R(Ppr, Ppr) -> 3, R(Ppr, Scs) -> 6,
+  R(Scs, Rck) -> 6, R(Scs, Ppr) -> 0, R(Scs, Scs) -> 3)
 
 // part 1
 rounds.map(r => shapeScores(r.me) + roundScores(r)).sum
 
 // part 2
-// X means you need to lose,
-// Y means you need to end the round in a draw, and
-// Z means you need to win. Good luck!"
+// X (Rck) means you need to lose,
+// Y (Ppr) means you need to end the round in a draw, and
+// Z (Scs) means you need to win. Good luck!"
 
 val strategy = Map(
   // lose
-  "X" -> Map("A" -> "Z", "B" -> "X", "C" -> "Y"),
+  Rck -> Map(Rck -> Scs, Ppr -> Rck, Scs -> Ppr),
   // draw
-  "Y" -> Map("A" -> "X", "B" -> "Y", "C" -> "Z"),
+  Ppr -> Map(Rck -> Rck, Ppr -> Ppr, Scs -> Scs),
   // win
-  "Z" -> Map("A" -> "Y", "B" -> "Z", "C" -> "X")
+  Scs -> Map(Rck -> Ppr, Ppr -> Scs, Scs -> Rck)
 )
 
 rounds.map(r => shapeScores(strategy(r.me)(r.opp)) + roundScores(R(r.opp, strategy(r.me)(r.opp)))).sum

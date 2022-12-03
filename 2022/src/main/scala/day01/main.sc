@@ -11,6 +11,6 @@ val sums = bufferedSource
 sums.max
 
 // part 2
-sums.sorted.reverse.slice(0, 3).sum
+sums.sorted.takeRight(3).sum
 
 bufferedSource.close

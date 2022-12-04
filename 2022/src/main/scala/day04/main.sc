@@ -1,36 +1,34 @@
 import scala.io.Source
 
-case class Interval(start: Int, end: Int)
+case class Interval(start: Int, end: Int):
+  def overlapsLeft(other: Interval) =
+    this.start <= other.start && this.end >= other.start
 
-case class AssignmentPair(i1: Interval, i2: Interval)
+  def overlapsRight(other: Interval) =
+    this.end >= other.end && this.start <= other.end
+
+  def contains(other: Interval) =
+    (this overlapsLeft other) && (this overlapsRight other)
+
+  def containedIn(other: Interval) = other contains this // not needed
+
+case class AssignmentPair(i1: Interval, i2: Interval):
+  def intervalsOverlapTotally = (i1 contains i2) || (i2 contains i1)
+
+  def intervalsOverlapPartially =
+    (i1 overlapsLeft i2) || (i1 overlapsRight i2) ||
+      (i2 overlapsLeft i1) || (i2 overlapsRight i1)
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day04/input.txt"))
 val assignmentPairs = bufferedSource.getLines().map(_.split(Array(',', '-')).map(_.toInt))
-  .map(i => AssignmentPair(Interval(i(0), i(1)), Interval(i(2), i(3)))) // without this, see commented out code
+  .map(i => AssignmentPair(Interval(i(0), i(1)), Interval(i(2), i(3))))
   .toVector
 
 bufferedSource.close
 
-// part 1 - total overlap
-//assignmentPairs.count(
-// a => a(0) >= a(2) && a(1) <= a(3) ||
-// a(0) <= a(2) && a(1) >= a(3)
-// )
-assignmentPairs.count(a =>
-  a.i1.start >= a.i2.start && a.i1.end <= a.i2.end ||
-    a.i1.start <= a.i2.start && a.i1.end >= a.i2.end
-)
+// part 1
+assignmentPairs.count(_.intervalsOverlapTotally)
 
-// part 2 - partial overlaps
-//assignmentPairs.count(
-// a => a(0) <= a(2) && a(1) >= a(2) ||
-// a(1) >= a(3) && a(0) <= a(3) ||
-// a(2) <= a(0) && a(3) >= a(0) ||
-// a(3) >= a(1) && a(2) <= a(1)
-// )
-assignmentPairs.count(a =>
-  a.i1.start <= a.i2.start && a.i1.end >= a.i2.start ||
-    a.i1.end >= a.i2.end && a.i1.start <= a.i2.end ||
-    a.i2.start <= a.i1.start && a.i2.end >= a.i1.start ||
-    a.i2.end >= a.i1.end && a.i2.start <= a.i1.end
-)
+// part 2
+assignmentPairs.count(_.intervalsOverlapPartially)
+

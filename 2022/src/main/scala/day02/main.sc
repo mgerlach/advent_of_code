@@ -1,12 +1,9 @@
 import scala.io.Source
 
-sealed trait Shape
+enum Shape:
+  case Rck, Ppr, Scs
 
-case object Rck extends Shape
-
-case object Ppr extends Shape
-
-case object Scs extends Shape
+import Shape._
 
 val S = Map("A" -> Rck, "B" -> Ppr, "C" -> Scs, "X" -> Rck, "Y" -> Ppr, "Z" -> Scs)
 

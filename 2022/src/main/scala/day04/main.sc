@@ -12,7 +12,7 @@ case class Interval(start: Int, end: Int):
 
   def containedIn(other: Interval) = other contains this // not needed
 
-case class AssignmentPair(i1: Interval, i2: Interval):
+class AssignmentPair(i1: Interval, i2: Interval):
   def intervalsOverlapTotally = (i1 contains i2) || (i2 contains i1)
 
   def intervalsOverlapPartially =

@@ -7,7 +7,7 @@ val lines = bufferedSource.getLines().toVector
 bufferedSource.close
 
 val (stacksWithIndexes, instructionLines) = lines.splitAt(lines.indexOf(""))
-val (indexes, reversedStackLines) = (stacksWithIndexes.reverse.head, stacksWithIndexes.reverse.tail)
+val reversedStackLines = stacksWithIndexes.reverse.tail
 
 def parseStacks(reversedStackLines: Vector[String]) =
   val stackMap = mutable.Map[Int, mutable.Stack[String]]()

@@ -7,7 +7,7 @@ class Tree(val height: Int, var visible: Boolean = false):
 case class Vec(x: Int, y: Int):
   def +(other: Vec): Vec = Vec(this.x + other.x, this.y + other.y)
 
-case class Grid(grid: Vector[Vector[Tree]]):
+case class Grid(grid: IndexedSeq[IndexedSeq[Tree]]):
   override def toString: String =
     "\n" + grid.map(_.mkString(" ")).mkString("\n")
 
@@ -43,7 +43,7 @@ case class Grid(grid: Vector[Vector[Tree]]):
       + (if (viewAxis.isEmpty && inBounds(pos + d)) 1 else 0)
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day08/input.txt"))
-val grid = Grid(bufferedSource.getLines().map(_.toVector.map(c => Tree(c - 48))).toVector)
+val grid = Grid(bufferedSource.getLines().map(_.toIndexedSeq.map(c => Tree(c - 48))).toIndexedSeq)
 
 bufferedSource.close
 

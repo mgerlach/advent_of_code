@@ -1,7 +1,7 @@
 import scala.io.Source
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day03/input.txt"))
-val rucksacks = bufferedSource.getLines().toVector
+val rucksacks = bufferedSource.getLines().toSeq
 
 bufferedSource.close
 
@@ -22,7 +22,7 @@ rucksacks
 
 // part 2
 
-def sumGroupIntersections(group: Vector[String], rest: Vector[String]): Int =
+def sumGroupIntersections(group: Seq[String], rest: Seq[String]): Int =
 // expect only one in the intersection of 3
   prio(group.map(_.toSet).reduce(_ & _).head)
     + (if (rest.nonEmpty) sumGroupIntersections(rest.take(3), rest.takeRight(rest.length - 3)) else 0)

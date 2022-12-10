@@ -1,7 +1,7 @@
 import scala.io.Source
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day09/input.txt"))
-val motionInput = bufferedSource.getLines().map(_.split(" ").toList).toVector
+val motionInput = bufferedSource.getLines().map(_.split(" ").toList).toSeq
 
 bufferedSource.close
 
@@ -22,15 +22,7 @@ val directionVectors = Map(
 )
 
 val headMotions = motionInput.flatMap(m => m match
-  case direction :: steps :: _ => (0 until steps.toInt).map(_ => directionVectors(direction))
-  case _ => ???
-)
-
-val head = Vec(0, 0)
-
-// part 1
-
-val tail = head
+  case direction :: steps :: _ => (0 until steps.toInt).map(_ => directionVectors(direction)))
 
 def moveTail(head: Vec, tail: Vec): Vec =
   head dist tail match
@@ -39,32 +31,37 @@ def moveTail(head: Vec, tail: Vec): Vec =
     case 2 if tail.x != head.x && tail.y != head.y => tail
     case _ => tail + (head - tail).sgn
 
-val headPosAndTailPath = headMotions.foldLeft((head, List(tail)))(
-  (hAndTPath, hm) => hAndTPath match
-    case (h, tPath) =>
-      val newHead = h + hm
-      (newHead, tPath :+ moveTail(newHead, tPath.last)))
+// part 1
+
+val headPosAndTailPath = headMotions.foldLeft((Vec(0, 0), Seq(Vec(0, 0))))((_, _) match
+  case ((h, tPath), hm) =>
+    val newHead = h + hm
+    (newHead, tPath :+ moveTail(newHead, tPath.last)))
 
 Set(headPosAndTailPath._2: _*).size
 
 // part 1 redone + part 2
 
-val ropeLength = 10 // for part 1, use 2
+def part2(ropeLength: Int): Int =
 
-val rope = (0 until ropeLength).map(_ => head).toList
-
-def moveRope(m: Vec, rope: List[Vec]): List[Vec] =
-  val newHead = rope.head + m
-  newHead :: rope.tail.foldLeft((newHead, Nil.asInstanceOf[List[Vec]]))(
-    (currHeadAndNewTail, knot) => currHeadAndNewTail match
-      case (currHead, newTail) =>
+  def moveRope(m: Vec, rope: Seq[Vec]): IndexedSeq[Vec] =
+    val newHead = rope.head + m
+    newHead +: rope.tail.foldLeft((newHead, IndexedSeq[Vec]()))((_, _) match
+      case ((currHead, newTail), knot) =>
         val newKnot = moveTail(currHead, knot)
         (newKnot, newTail :+ newKnot))._2
 
-val ropeAndTailPath = headMotions.foldLeft((rope, List(rope.last)))(
-  (rAndTPath, hm) => rAndTPath match
-    case (r, tPath) =>
+  val rope = (0 until ropeLength).map(_ => Vec(0, 0))
+
+  val ropeAndTailPath = headMotions.foldLeft((rope, IndexedSeq(rope.last)))((_, _) match
+    case ((r, tPath), hm) =>
       val newRope = moveRope(hm, r)
       (newRope, tPath :+ newRope.last))
 
-Set(ropeAndTailPath._2: _*).size
+  Set(ropeAndTailPath._2: _*).size
+
+// part 1
+part2(2)
+
+// part 2
+part2(10)

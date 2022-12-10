@@ -22,7 +22,7 @@ class AssignmentPair(i1: Interval, i2: Interval):
 val bufferedSource = Source.fromURL(getClass.getResource("/day04/input.txt"))
 val assignmentPairs = bufferedSource.getLines().map(_.split(Array(',', '-')).map(_.toInt))
   .map(i => AssignmentPair(Interval(i(0), i(1)), Interval(i(2), i(3))))
-  .toVector
+  .toSeq
 
 bufferedSource.close
 

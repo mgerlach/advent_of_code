@@ -12,7 +12,7 @@ val S = Map("A" -> Rck, "B" -> Ppr, "C" -> Scs, "X" -> Rck, "Y" -> Ppr, "Z" -> S
 case class R(opp: Shape, me: Shape)
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day02/input.txt"))
-val rounds = bufferedSource.getLines().map(_.split(' ')).map(a => R(S(a(0)), S(a(1)))).toVector
+val rounds = bufferedSource.getLines().map(_.split(' ')).map(a => R(S(a(0)), S(a(1)))).toSeq
 
 bufferedSource.close
 

@@ -4,7 +4,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day07/input.txt"))
-val lines = bufferedSource.getLines().map(_.split(' ').toList).toList
+val instructions = bufferedSource.getLines().map(_.split(' ').toList).toList
 
 bufferedSource.close
 
@@ -32,26 +32,27 @@ case class Dir(name: String, children: ArrayBuffer[Node] = ArrayBuffer()) extend
 
 val root = Dir("/") // assume first command is "$ cd /"
 
-def buildNodeGetRest(lines: List[List[String]], current: Node): List[List[String]] =
-  var l = lines
-  while (l.nonEmpty)
-    l match
+def buildNodeGetRest(instructions: List[List[String]], current: Node): List[List[String]] =
+  var remainingInstructions = instructions
+  while (remainingInstructions.nonEmpty)
+    remainingInstructions match
       case line :: rest =>
-        l = rest
+        remainingInstructions = rest
         line match
           case "$" :: "cd" :: "/" :: _ => ???
           case "$" :: "cd" :: ".." :: _ => return rest
           case "$" :: "cd" :: dirName :: _ =>
             // requires ls before cd
-            l = buildNodeGetRest(l.tail, current.children.find(_.name == dirName).get)
+            remainingInstructions = buildNodeGetRest(remainingInstructions.tail, current.children.find(_.name == dirName).get)
           case "$" :: "ls" :: _ => // ls is a noop
           case "dir" :: name :: _ =>
             current.add(Dir(name)) // assume no dir is listed twice
           case sizeStr :: name :: _ =>
             current.add(File(name, sizeStr.toInt)) // dito
-  l
 
-buildNodeGetRest(lines.tail, root) // returns empty list - no more lines to parse
+  remainingInstructions
+
+buildNodeGetRest(instructions.tail, root) // returns empty list - no more lines to parse
 
 root
 

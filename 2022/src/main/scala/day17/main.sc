@@ -1,15 +1,13 @@
 import scala.collection.immutable.Queue
 import scala.io.Source
 
-
 val chamberW = 7
 
 case class Vec(x: Int, y: Int):
   def +(other: Vec): Vec = Vec(this.x + other.x, this.y + other.y)
 
-
 val bufferedSource = Source.fromURL(getClass.getResource("/day17/input.txt"))
-val push = bufferedSource.map(c => if (c == '>') Vec(1, 0) else Vec(-1, 0)).toIndexedSeq
+val gasPush = bufferedSource.map(c => if (c == '>') Vec(1, 0) else Vec(-1, 0)).toIndexedSeq
 
 bufferedSource.close
 
@@ -17,6 +15,7 @@ val startOffset = Vec(2, 3)
 val down = Vec(0, -1)
 val up = Vec(0, 1)
 val initFloor = Queue((0 until chamberW).map(Vec(_, -1)): _*) // immutable!
+val maxQueueSize = 100 // arbitrary, should not be too small
 
 case class Rock(pos: Vec, size: Vec, pieces: Set[Vec]):
 
@@ -31,43 +30,35 @@ case class Rock(pos: Vec, size: Vec, pieces: Set[Vec]):
     this.pieces.exists(cave.contains)
 
 val shapes = IndexedSeq(
-  /*
-  ####
-  */
+  //  ####
   Rock(Vec(0, 0), Vec(4, 1), Set(Vec(0, 0), Vec(1, 0), Vec(2, 0), Vec(3, 0))),
-  /*
-  .#.
-  ###
-  .#.
-  */
+  //  .#.
+  //  ###
+  //  .#.
   Rock(Vec(0, 0), Vec(3, 3), Set(Vec(0, 1), Vec(1, 2), Vec(1, 1), Vec(1, 0), Vec(2, 1))),
-  /*
-  ..#
-  ..#
-  ###
-  */
+  //  ..#
+  //  ..#
+  //  ###
   Rock(Vec(0, 0), Vec(3, 3), Set(Vec(0, 0), Vec(1, 0), Vec(2, 0), Vec(2, 1), Vec(2, 2))),
-  /*
-  #
-  #
-  #
-  #
-  */
+  //  #
+  //  #
+  //  #
+  //  #
   Rock(Vec(0, 0), Vec(1, 4), Set(Vec(0, 0), Vec(0, 1), Vec(0, 2), Vec(0, 3))),
-  /*
-  ##
-  ##
-  */
+  //  ##
+  //  ##
   Rock(Vec(0, 0), Vec(2, 2), Set(Vec(0, 0), Vec(1, 0), Vec(0, 1), Vec(1, 1)))
 )
 
-def initRock(pos: Vec, t: Int): Rock = shapes(t).move(pos)
+def initRock(pos: Vec, rCount: Int): Rock = shapes(rCount % shapes.length).move(pos)
 
 def draw(maxY: Int, cave: Seq[Vec], rock: Rock): Unit =
   for y <- Range.inclusive(maxY - 1, -1, -1) do
+    print('|')
     for x <- 0 until chamberW do
       print(if (cave.contains(Vec(x, y))) '#' else if (rock.pieces.contains(Vec(x, y))) '@' else '.')
-    println
+    println('|')
+  println("+" + "-".repeat(chamberW) + "+")
 
 /**
  * @param start 4-tupel of: maxY - top of highest rock, r - index (counter) of last fallen rock, p - index into gas push directions array (% length),
@@ -76,40 +67,44 @@ def draw(maxY: Int, cave: Seq[Vec], rock: Rock): Unit =
  *              to resume iteration.
  * @return see start param
  */
-def iter(start: (Int, Int, Int, Queue[Vec])): LazyList[(Int, Int, Int, Queue[Vec])] =
-  LazyList.iterate(start)((maxY, r, p, cave) =>
-    LazyList
-      .iterate((p, initRock(startOffset + Vec(0, maxY), r % 5)))((p, rock) =>
-        ((p + 1) % push.length, rock.moveIfPossible(push(p), cave).move(down)))
-      .find((_, rock) => rock.intersects(cave)) // stop when rock falls "into" other rock
-      .map((p, rock) => (p, rock.move(up))) match // move back to last valid position
-      case Some((p, rock)) =>
-        // draw(math.max(maxY, rock.pos.y + rock.size.y) + 5, cave, rock)
-        (math.max(maxY, rock.pos.y + rock.size.y), // need to max here as rock can fall past other ones
-          r + 1, // next rock (counter)
-          p, // next index into gas push after last rock has fallen
-          if (cave.size > 100)
-            (0 until cave.size - 100).foldLeft(cave)((cave, _) => cave.dequeue._2).enqueueAll(rock.pieces)
-          else
-            cave.enqueueAll(rock.pieces))
+def iter(start: (Int, Int, Int, Queue[Vec])): LazyList[(Int, Int, Int, Queue[Vec])] = LazyList
+  // rocks
+  .iterate(start)((maxY, r, p, cave) => LazyList
+    // rock movements (gas push and fall)
+    .iterate((p, initRock(startOffset + Vec(0, maxY), r)))((p, rock) => (
+      (p + 1) % gasPush.length, // next push index
+      rock.moveIfPossible(gasPush(p), cave).move(down) // push & down
+    ))
+    .find((_, rock) => rock.intersects(cave)) // stop when rock falls "into" other rock
+    .map((p, rock) => (p, rock.move(up))) match // move back to last valid position
+    case Some((p, rock)) =>
+      // draw(math.max(maxY, rock.pos.y + rock.size.y) + 5, cave, rock)
+      (math.max(maxY, rock.pos.y + rock.size.y), // need to max here as rock can fall past other ones
+        r + 1, // next rock (counter)
+        p, // next index into gas push after last rock has fallen
+        // remove obsolete rock pieces from cave model (figure no new rock will fall that far)
+        (0 until cave.size - maxQueueSize).foldLeft(cave)((cave, _) => cave.dequeue match
+          case (_, q) => q).enqueueAll(rock.pieces)
+      )
   )
 
 def iterate: LazyList[(Int, Int, Int, Queue[Vec])] = iter(start = (0, 0, 0, initFloor))
 
-def simulate(rocks: Int): (Int, Int, Int, Queue[Vec]) = iterate.take(rocks + 1).last
+def simulate(rocks: Int): Int = iterate.take(rocks + 1).last match
+  case (h, _, _, _) => h
 
 // part 1
 
 val start1 = System.currentTimeMillis()
-val (part1, _, _, _) = simulate(2022)
-System.currentTimeMillis() - start1
+val part1 = simulate(2022)
+println(s"${System.currentTimeMillis() - start1}ms")
 
 // part 2
 
 // test data, 2022 rocks, h = 3068
 // iterate.take(2022).foreach(println), check value of p (._3, index into gas push)
 //
-// At h = 25 (15 rocks), a 35 rock period starts in the p series, with h diff = 53 starts
+// At h = 25 (15 rocks), a 35 rock period starts in the p series, with h diff = 53
 // (2022 - 15)/35 = 57 full periods for h = 3021
 // + h = 25 from beginning = 3046
 // + missing (2022 - 15)/35 division remainder -> 12 rocks into period
@@ -123,49 +118,45 @@ System.currentTimeMillis() - start1
 // = 1514285714288
 
 // find period begin and length
-// assume 5 shapes * 10091 gas push length as 'worst case', i.e. each falling rock only pushed once by gas
+// assume shape count * gas push length as 'worst case', i.e. each falling rock only pushed once by gas
 
 // take 3x [worst case]
-val maxLength = shapes.length * push.length
-val x = iterate.take(3 * maxLength).map(_._3).toIndexedSeq
+val maxLength = shapes.length * gasPush.length
+val P = iterate.take(3 * maxLength).map((_, _, p, _) => p).toIndexedSeq
 
 // take [worst case] rocks from end
-val maxSlice = x.slice(x.length - maxLength, x.length)
+val maxSlice = P.slice(P.length - maxLength, P.length)
 
 // try to find that [worst case] length sequence in first 2*[worst case] iterations
-for i <- 0 to maxLength do
-  if (maxSlice == x.slice(i, i + maxLength))
-    println(i)
+val maxSliceStarts = LazyList
+  .iterate(0)(_ + 1)
+  .filter(i => P.slice(i, i + maxLength) == maxSlice)
+  .take(5) // need at least 2, taking more just to be safe about the deltas
+  .toIndexedSeq // 1730, 3470, 5210, ...
 
-// 1730
-// 3470
-// 5210
-// ...
+val pLength = maxSliceStarts(1) - maxSliceStarts(0)
 
-// -> period length is 1740, now find where it starts
+// now find where it appears the 1st time (first sequence of length pLength that repeats itself)
+val pStart = LazyList
+  .iterate(0)(_ + 1)
+  .find(i => P.slice(i, i + pLength) == P.slice(i + pLength, i + 2 * pLength))
+  .get // 207
 
-for i <- 0 until 1740 do
-  val pSlice = x.slice(i, i + 1740)
-  for j <- 1 until 2 * 1740 do
-    if (pSlice == x.slice(i + j, i + j + 1740))
-      println(s"$i $j $pSlice")
+// -> period appears the first time at 207 (starting with p = P(pStart) = 1155)
 
-// -> period appears the first time at 207, starting with p = 1155
+val hBegin = simulate(pStart)
+val periodHDiff = simulate(pStart + pLength) - hBegin
+val periodTimes = (1000000000000L - pStart) / pLength
+val remainder = (1000000000000L - pStart) % pLength
+val hRemainderIntoPeriod = simulate(pStart + remainder.toInt) - hBegin
 
-val (hBegin, _, _, _) = simulate(207)
-val periodHDiff = simulate(207 + 1740) match
-  case (h, _, _, _) => h - hBegin
-val periodTimes = 1000000000000L / 1740
-val remainder = (1000000000000L - 207) % 1740
-val hRemainderIntoPeriod = simulate(207 + remainder.toInt) match
-  case (h, _, _, _) => h - hBegin
-
-val part2 = hBegin
-  + periodTimes * periodHDiff
-  + hRemainderIntoPeriod
+val part2 =
+  hBegin
+    + periodTimes * periodHDiff
+    + hRemainderIntoPeriod
 
 // 1582758620701
 
 // simplified
-val (hBeginAndRemainder, _, _, _) = simulate(207 + remainder.toInt)
+val hBeginAndRemainder = simulate(pStart + remainder.toInt)
 val part2s = periodTimes * periodHDiff + hBeginAndRemainder

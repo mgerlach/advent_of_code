@@ -14,8 +14,8 @@ val r = "Sensor at x=(-?\\d+), y=(-?\\d+): closest beacon is at x=(-?\\d+), y=(-
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day15/input.txt"))
 val sensorToClosestBeacon = bufferedSource.getLines()
-  .map(r.findAllMatchIn)
-  .flatMap(_.map(m => (Vec(m.group(1).toInt, m.group(2).toInt), Vec(m.group(3).toInt, m.group(4).toInt))))
+  .map(_ match
+    case r(sx, sy, bx, by) => (Vec(sx.toInt, sy.toInt), Vec(bx.toInt, by.toInt)))
   .toList
 
 bufferedSource.close

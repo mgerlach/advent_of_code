@@ -9,8 +9,8 @@ val r = "Valve ([A-Z]{2}) has flow rate=(\\d+); tunnels? leads? to valves? ([A-Z
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day16/input.txt"))
 val valves = bufferedSource.getLines()
-  .map(r.findAllMatchIn)
-  .flatMap(_.map(m => (m.group(1), Valve(m.group(1), m.group(2).toInt, m.group(3).split(", ").toSet))))
+  .map(_ match
+    case r(valveName, flowRateStr, tunnels, _) => (valveName, Valve(valveName, flowRateStr.toInt, tunnels.split(", ").toSet)))
   .toMap
 
 val closed = valves.values.filter(_.flowRate > 0).map(_.name).toSet

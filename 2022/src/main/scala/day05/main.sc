@@ -1,4 +1,3 @@
-import java.util.regex.Pattern
 import scala.collection.mutable
 import scala.io.Source
 
@@ -32,13 +31,11 @@ class Instruction(num: Int, from: Int, to: Int):
     for _ <- 1 to num do stacks(to).push(temp.pop())
 
 
-val movePattern = Pattern.compile("move (\\d+) from (\\d+) to (\\d+)")
+val movePattern = "move (\\d+) from (\\d+) to (\\d+)".r
 
 val instructions = instructionLines.tail
-  .map(movePattern.matcher(_))
-  .filter(_.matches())
-  .map(m => Instruction(m.group(1).toInt, m.group(2).toInt - 1, m.group(3).toInt - 1))
-
+  .map(_ match
+    case movePattern(crate, from, to) => Instruction(crate.toInt, from.toInt - 1, to.toInt - 1))
 
 // part 1
 

@@ -1,6 +1,3 @@
-import scala.:+
-import scala.collection.mutable
-import scala.collection.mutable.ArrayBuffer
 import scala.io.Source
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day07/input.txt"))

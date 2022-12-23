@@ -87,8 +87,8 @@ def solve(target: Node, other: Node): Node =
         solve(right, Div(name, left, other))
       case _ => ???
 
-val (target, other) = if (root.left.contains("humn")) (root.left, root.right) else (root.right, root.left)
+val (target, other) = if (root.left.contains(targetName)) (root.left, root.right) else (root.right, root.left)
 
-val humn = solve(target, other)
+val solution = solve(target, other)
 
-humn.eval
+solution.eval

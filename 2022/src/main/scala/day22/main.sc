@@ -10,9 +10,6 @@ val map = mapAndInstructions(0).split("\n").toIndexedSeq
 case class Vec(x: Int, y: Int):
   def add(other: Vec): Vec = Vec(this.x + other.x, this.y + other.y)
 
-case class Rng(from: Int, until: Int):
-  def includes(i: Int) = from <= i && i < until
-
 val R = Vec(1, 0)
 val D = Vec(0, 1)
 val L = Vec(-1, 0)
@@ -39,6 +36,9 @@ def takeRotation(instructions: String): (Char, String) = (instructions.head, ins
 def tile(pos: Vec) = map(pos.y)(pos.x)
 
 // part 1
+
+case class Rng(from: Int, until: Int):
+  def includes(i: Int) = from <= i && i < until
 
 // find valid ranges for each row and column
 val xRange = map.map(r => Rng(r.indexWhere(_ != ' '), r.lastIndexWhere(_ != ' ') + 1))

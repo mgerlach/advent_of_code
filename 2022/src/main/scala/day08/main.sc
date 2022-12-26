@@ -1,3 +1,4 @@
+import scala.collection.immutable.LazyList.iterate
 import scala.io.Source
 import scala.math
 
@@ -25,7 +26,7 @@ case class Grid(grid: IndexedSeq[IndexedSeq[Tree]]):
 
   // marks visible trees from start along direction given by d, returns maxHeight
   def markVisible(start: Vec, d: Vec): Int =
-    LazyList.iterate(start)(_ + d)
+    iterate(start)(_ + d)
       .takeWhile(inBounds)
       .foldLeft(-1)((maxHeight, pos) =>
         if (grid(pos.y)(pos.x).height > maxHeight)
@@ -35,7 +36,7 @@ case class Grid(grid: IndexedSeq[IndexedSeq[Tree]]):
           maxHeight)
 
   def countVisibleTreesOnViewAxis(pos: Vec, d: Vec): Int =
-    val viewAxis = LazyList.iterate(pos + d)(_ + d).takeWhile(p => inBounds(p) && treeHeight(p) < treeHeight(pos))
+    val viewAxis = iterate(pos + d)(_ + d).takeWhile(p => inBounds(p) && treeHeight(p) < treeHeight(pos))
     viewAxis.length
       // include stopping tree
       + (if (viewAxis.nonEmpty && inBounds(viewAxis.last + d)) 1 else 0)

@@ -1,3 +1,4 @@
+import scala.collection.immutable.LazyList.iterate
 import scala.io.Source
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day22/input.txt"))
@@ -8,7 +9,7 @@ val instructions = mapAndInstructions(1)
 val map = mapAndInstructions(0).split("\n").toIndexedSeq
 
 case class Vec(x: Int, y: Int):
-  def add(other: Vec): Vec = Vec(this.x + other.x, this.y + other.y)
+  def +(other: Vec): Vec = Vec(this.x + other.x, this.y + other.y)
 
 val R = Vec(1, 0)
 val D = Vec(0, 1)
@@ -25,8 +26,7 @@ def takeNumber(instructions: String): (Int, String) =
   if (instructions.matches("\\d+"))
     (instructions.toInt, "")
   else
-    LazyList
-      .iterate((instructions.head.toString, instructions.tail))((numStr, rest) => (numStr + rest.head, rest.tail))
+    iterate((instructions.head.toString, instructions.tail))((numStr, rest) => (numStr + rest.head, rest.tail))
       .takeWhile((numStr, rest) => numStr.matches("\\d+") && rest.nonEmpty)
       .last match
       case (numStr, rest) => (numStr.toInt, rest)
@@ -49,8 +49,8 @@ val yRange = (0 until width).map(x =>
     (0 until height).lastIndexWhere(y => xRange(y).includes(x)) + 1))
 
 def move(pos: Vec, facing: Vec, steps: Int): Vec =
-  LazyList.iterate(pos)(pos =>
-    (pos.add(facing), facing) match
+  iterate(pos)(pos =>
+    (pos + facing, facing) match
       case (Vec(x, y), R) => if (xRange(y).includes(x)) Vec(x, y) else Vec(xRange(y).from, y)
       case (Vec(x, y), L) => if (xRange(y).includes(x)) Vec(x, y) else Vec(xRange(y).until - 1, y)
       case (Vec(x, y), D) => if (yRange(x).includes(y)) Vec(x, y) else Vec(x, yRange(x).from)
@@ -65,7 +65,7 @@ def part1 =
   val pos = move(Vec(xRange(0).from, 0), R, steps)
 
   val (finalPos, finalFacing, _) =
-    LazyList.iterate((pos, R, restInstr))((pos, facing, instr) =>
+    iterate((pos, R, restInstr))((pos, facing, instr) =>
       val (turn, tmpRestInstr) = takeRotation(instr)
       val newFacing = turns(turn)(facing)
       val (steps, restInstr) = takeNumber(tmpRestInstr)
@@ -123,7 +123,7 @@ val realWrap: Map[(Vec, Vec), (Vec, Vec)] = (0 until 50)
 
 // return (new pos, new facing)
 def move2(pos: Vec, facing: Vec, steps: Int, wrap: Map[(Vec, Vec), (Vec, Vec)]): (Vec, Vec) =
-  LazyList.iterate((pos, facing))((pos, facing) => wrap.getOrElse((pos, facing), (pos.add(facing), facing)))
+  iterate((pos, facing))((pos, facing) => wrap.getOrElse((pos, facing), (pos + facing, facing)))
     .take(steps + 1)
     .takeWhile((pos, _) => tile(pos) == '.')
     .last
@@ -133,7 +133,7 @@ def part2(wrap: Map[(Vec, Vec), (Vec, Vec)]) =
   val (pos, facing) = move2(Vec(xRange(0).from, 0), R, steps, wrap)
 
   val ((finalPos, finalFacing), _) =
-    LazyList.iterate(((pos, facing), restInstr))(_ match
+    iterate(((pos, facing), restInstr))(_ match
       case ((pos, facing), instr) =>
         val (turn, tmpRestInstr) = takeRotation(instr)
         val newFacing = turns(turn)(facing)

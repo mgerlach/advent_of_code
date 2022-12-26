@@ -12,7 +12,7 @@ val Geode = 3
 def rvec(i: Int): RVec = RVec((0 to 3).map(j => if (j == i) 1 else 0).toVector)
 
 case class RVec(v: Vector[Int]):
-  def add(other: RVec): RVec = RVec(this.v.zip(other.v).map(_ + _))
+  def +(other: RVec): RVec = RVec(this.v.zip(other.v).map(_ + _))
 
   def inc(i: Int) = RVec(v.zipWithIndex.map((r, j) => if (i == j) r + 1 else r))
 
@@ -42,14 +42,14 @@ def evalBlueprint(b: Blueprint, mins: Int): Int =
       (mat.get(Geode), math.max(mat.get(Geode), maxGeodes))
     else // if (cut search tree by estimating possible max and comparing to maxGeodes)
       // affordable robots
-      val budget = b.costs.zipWithIndex.filter((costs, _) => !mat.add(costs).neg)
+      val budget = b.costs.zipWithIndex.filter((costs, _) => !(mat + costs).neg)
 
       // buy = budget.map((costs, r) => search(mins - 1, maxGeodes, mat.add(costs).add(robots), robots.inc(r)))
       // r = index of robot, costs = b.costs(r)
 
       // do not spend (save): search(mins - 1, maxGeodes, mat.add(robots), robots)
       // (buy :+ save).maxBy((_, maxG) => maxG)
-      
+
     (0, 0)
 
   // else (0, maxGeodes)

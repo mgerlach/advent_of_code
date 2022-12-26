@@ -10,9 +10,9 @@ case class Vec(x: Int, y: Int):
 
   def -(other: Vec): Vec = Vec(this.x - other.x, this.y - other.y)
 
-  def dist(other: Vec): Int = math.abs(this.x - other.x) + math.abs(this.y - other.y)
+  def dist(other: Vec): Int = (this.x - other.x).abs + (this.y - other.y).abs
 
-  def sgn: Vec = Vec(math.signum(this.x), math.signum(this.y))
+  def sgn: Vec = Vec(this.x.sign, this.y.sign)
 
 val directionVectors = Map(
   "R" -> Vec(1, 0),

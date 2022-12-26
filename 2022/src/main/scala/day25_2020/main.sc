@@ -1,3 +1,4 @@
+import scala.collection.immutable.LazyList.iterate
 import scala.io.Source
 
 val bufferedSource = Source.fromURL(getClass.getResource("/day25_2020/input.txt"))
@@ -9,7 +10,7 @@ bufferedSource.close
 // Set the value to the remainder after dividing the value by 20201227.
 
 def getSequence(subjectNumber: Long): LazyList[Long] =
-  LazyList.iterate(1L)(i => (i * subjectNumber) % 20201227L)
+  iterate(1L)(i => (i * subjectNumber) % 20201227L)
 
 def getLoopSize(subjectNumber: Long, pk: Long) =
   var i = 0

@@ -1,4 +1,5 @@
-import scala.collection.immutable.Queue
+import scala.collection.immutable.LazyList.iterate
+import scala.collection.immutable.{LazyList, Queue}
 import scala.io.Source
 
 val chamberW = 7
@@ -67,30 +68,28 @@ def draw(maxY: Int, cave: Seq[Vec], rock: Rock): Unit =
  *              to resume iteration.
  * @return see start param
  */
-def iter(start: (Int, Int, Int, Queue[Vec])): LazyList[(Int, Int, Int, Queue[Vec])] = LazyList
-  // rocks
-  .iterate(start)((maxY, r, p, cave) => LazyList
-    // rock movements (gas push and fall)
-    .iterate((p, initRock(startOffset + Vec(0, maxY), r)))((p, rock) => (
+def iter(start: (Int, Int, Int, Queue[Vec])): LazyList[(Int, Int, Int, Queue[Vec])] =
+  iterate(start)((maxY, r, p, cave) =>
+    iterate((p, initRock(startOffset + Vec(0, maxY), r)))((p, rock) => (
       (p + 1) % gasPush.length, // next push index
       rock.moveIfPossible(gasPush(p), cave).move(down) // push & down
     ))
-    .find((_, rock) => rock.intersects(cave)) // stop when rock falls "into" other rock
-    .map((p, rock) => (p, rock.move(up))) match // move back to last valid position
-    case Some((p, rock)) =>
-      // draw(math.max(maxY, rock.pos.y + rock.size.y) + 5, cave, rock)
-      (math.max(maxY, rock.pos.y + rock.size.y), // need to max here as rock can fall past other ones
-        r + 1, // next rock (counter)
-        p, // next index into gas push after last rock has fallen
-        // remove obsolete rock pieces from cave model (figure no new rock will fall that far)
-        (0 until cave.size - maxQueueSize).foldLeft(cave)((cave, _) => cave.dequeue match
-          case (_, q) => q).enqueueAll(rock.pieces)
-      )
+      .find((_, rock) => rock.intersects(cave)) // stop when rock falls "into" other rock
+      .map((p, rock) => (p, rock.move(up))) match // move back to last valid position
+      case Some((p, rock)) =>
+        // draw(math.max(maxY, rock.pos.y + rock.size.y) + 5, cave, rock)
+        (math.max(maxY, rock.pos.y + rock.size.y), // need to max here as rock can fall past other ones
+          r + 1, // next rock (counter)
+          p, // next index into gas push after last rock has fallen
+          // remove obsolete rock pieces from cave model (figure no new rock will fall that far)
+          (0 until cave.size - maxQueueSize).foldLeft(cave)((cave, _) => cave.dequeue match
+            case (_, q) => q).enqueueAll(rock.pieces)
+        )
   )
 
-def iterate: LazyList[(Int, Int, Int, Queue[Vec])] = iter(start = (0, 0, 0, initFloor))
+def iterator: LazyList[(Int, Int, Int, Queue[Vec])] = iter(start = (0, 0, 0, initFloor))
 
-def simulate(rocks: Int): Int = iterate.take(rocks + 1).last match
+def simulate(rocks: Int): Int = iterator.take(rocks + 1).last match
   case (h, _, _, _) => h
 
 // part 1
@@ -122,14 +121,13 @@ println(s"${System.currentTimeMillis() - start1}ms")
 
 // take 3x [worst case]
 val maxLength = shapes.length * gasPush.length
-val P = iterate.take(3 * maxLength).map((_, _, p, _) => p).toIndexedSeq
+val P = iterator.take(3 * maxLength).map((_, _, p, _) => p).toIndexedSeq
 
 // take [worst case] rocks from end
 val maxSlice = P.slice(P.length - maxLength, P.length)
 
 // try to find that [worst case] length sequence in first 2*[worst case] iterations
-val maxSliceStarts = LazyList
-  .iterate(0)(_ + 1)
+val maxSliceStarts = iterate(0)(_ + 1)
   .filter(i => P.slice(i, i + maxLength) == maxSlice)
   .take(5) // need at least 2, taking more just to be safe about the deltas
   .toIndexedSeq // 1730, 3470, 5210, ...
@@ -137,8 +135,7 @@ val maxSliceStarts = LazyList
 val pLength = maxSliceStarts(1) - maxSliceStarts(0)
 
 // now find where it appears the 1st time (first sequence of length pLength that repeats itself)
-val pStart = LazyList
-  .iterate(0)(_ + 1)
+val pStart = iterate(0)(_ + 1)
   .find(i => P.slice(i, i + pLength) == P.slice(i + pLength, i + 2 * pLength))
   .get // 207
 

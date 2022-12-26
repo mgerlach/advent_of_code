@@ -1,13 +1,8 @@
+import scala.collection.immutable.LazyList.iterate
 import scala.io.Source
 
 case class Vec(x: Int, y: Int):
-  def +(other: Vec): Vec = Vec(this.x + other.x, this.y + other.y)
-
-  def -(other: Vec): Vec = Vec(this.x - other.x, this.y - other.y)
-
-  def dist(other: Vec): Int = math.abs(this.x - other.x) + math.abs(this.y - other.y)
-
-  def sgn: Vec = Vec(math.signum(this.x), math.signum(this.y))
+  def dist(other: Vec): Int = (this.x - other.x).abs + (this.y - other.y).abs
 
 // Sensor at x=20, y=1: closest beacon is at x=15, y=3
 val r = "Sensor at x=(-?\\d+), y=(-?\\d+): closest beacon is at x=(-?\\d+), y=(-?\\d+)".r
@@ -24,7 +19,7 @@ val sensorToClosestBeaconDist = sensorToClosestBeacon.map((s, b) => (s, s dist b
 
 val Y = 2000000 // 10
 def intersectWithY(s: Vec, d: Int, y: Int): Option[Range] =
-  Option(d - math.abs(s.y - y))
+  Option(d - (s.y - y).abs)
     .filter(_ >= 0)
     .map(dx => s.x - dx to s.x + dx)
 
@@ -53,8 +48,7 @@ val part1 = mergeRanges(rangesOnY(Y)).map(r => r.end - r.start + 1).sum - beacon
 
 val maxY = 4000000 // 20
 
-val (y, ranges) = LazyList
-  .iterate(0)(_ + 1)
+val (y, ranges) = iterate(0)(_ + 1)
   .map(y => (y, mergeRanges(rangesOnY(y))))
   .find((y, ranges) => ranges.size == 2 || y > maxY /* make sure to stop if none found */)
   .get

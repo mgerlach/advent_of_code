@@ -1,3 +1,4 @@
+import scala.collection.immutable.LazyList.iterate
 import scala.collection.mutable
 import scala.io.Source
 
@@ -37,10 +38,10 @@ z1000 + z2000 + z3000
 
 val origNumbersEnc = origNumbers.map(num => Num(num.n * 811589153L, num.i))
 
-val numbersEnc = LazyList
-  .iterate(origNumbersEnc)(input => mix(origNumbersEnc.minBy(_.n).n, origNumbersEnc, input))
-  .take(11)
-  .last
+val numbersEnc =
+  iterate(origNumbersEnc)(input => mix(origNumbersEnc.minBy(_.n).n, origNumbersEnc, input))
+    .take(11)
+    .last
 
 val zeroEnc = numbersEnc.indexWhere(_.n == 0)
 

@@ -42,7 +42,7 @@ case class Rng(from: Int, until: Int):
 
 // find valid ranges for each row and column
 val xRange = map.map(r => Rng(r.indexWhere(_ != ' '), r.lastIndexWhere(_ != ' ') + 1))
-val width = xRange.maxBy(_.until).until
+val width = xRange.map(_.until).max
 val height = map.length
 val yRange = (0 until width).map(x =>
   Rng((0 until height).indexWhere(y => xRange(y).includes(x)),

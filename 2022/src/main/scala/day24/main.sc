@@ -13,7 +13,7 @@ val down = Vec(0, 1)
 val left = Vec(-1, 0)
 val up = Vec(0, -1)
 val none = Vec(0, 0)
-val bufferedSource = Source.fromURL(getClass.getResource("/day24/test_input.txt"))
+val bufferedSource = Source.fromURL(getClass.getResource("/day24/input.txt"))
 val lines = bufferedSource.getLines().toIndexedSeq
 
 bufferedSource.close
@@ -63,12 +63,15 @@ def moveBlizzards(blizzards: Map[Vec, Seq[Vec]]) =
     .map((pos: Vec, blzds: Seq[(Vec, Vec)]) => (pos, blzds.map((_, blzd) => blzd))) // IDEA needs the type hints here...
     .toMap
 
-val blizzardSituations = iterate(blizzards)(moveBlizzards).take(cycleLength).toIndexedSeq
+val t_init = System.currentTimeMillis()
+
+// all blizzard states
+val allBlizzardStates = iterate(blizzards)(moveBlizzards).take(cycleLength).toIndexedSeq
+
+println(s"t_init_blizzards: ${System.currentTimeMillis() - t_init}ms")
 
 // sanity check
-// moveBlizzards(blizzardSituations.last) == blizzards
-
-// part 1
+// moveBlizzards(allBlizzardStates.last) == blizzards
 
 // all positions incl. start, target
 val allPositions =
@@ -77,17 +80,20 @@ val allPositions =
     x <- 0 until width
   yield Vec(x, y)) :+ startPos) :+ targetPos
 
-// all free positions for every cycle
-val allPositionsAllCycles = blizzardSituations.map(blzds => allPositions.filter(p => !blzds.contains(p)).toSet)
+// all free positions for every state
+val allPositionsAllStates: IndexedSeq[Set[Vec]] =
+  allBlizzardStates.map(blzds => allPositions.filter(p => !blzds.contains(p)).toSet)
 
-val nodeCount = allPositionsAllCycles.map(_.size).sum
+println(s"t_init_positions: ${System.currentTimeMillis() - t_init}ms")
 
-// returns distance (minutes) from start to goal plus blizzardSituation (cycle) when reaching the goal
+val nodeCount = allPositionsAllStates.map(_.size).sum
+
+// returns distance (minutes) from start to goal
 def dijkstraDist(nodes: IndexedSeq[Set[Vec]],
                  start: Vec,
                  goal: Vec,
-                 blizzardSituation: Int,
-                 searchSequence: Seq[Vec] = Seq(down, right, none, left, up)): (Int, Int) =
+                 initialBlizzardState: Int = 0,
+                 searchSequence: Seq[Vec] = Seq(down, right, none, left, up)): Int =
 
   def neighbors(pos: Vec): Seq[Vec] =
     searchSequence
@@ -99,10 +105,10 @@ def dijkstraDist(nodes: IndexedSeq[Set[Vec]],
 
   // init
   val distances = nodes.indices.map(i =>
-    if (i == blizzardSituation) mutable.Map(start -> 0) else mutable.Map[Vec, Int]())
+    if (i == initialBlizzardState) mutable.Map(start -> 0) else mutable.Map[Vec, Int]())
   //var predecessors = mutable.Map[(Vec, Int), (Vec, Int)]
   val nodesToVisit = nodes.map(set => mutable.Set(set.toSeq: _*))
-  var goalDist: Option[(Int, Int)] = None
+  var goalDist: Option[Int] = None
 
   while (goalDist.isEmpty)
     val (u, blzds, dist) =
@@ -116,7 +122,7 @@ def dijkstraDist(nodes: IndexedSeq[Set[Vec]],
     //println(s"$u $distances $nodesToVisit")
     nodesToVisit(blzds).remove(u)
     if (u == goal)
-      goalDist = Some((dist, blzds))
+      goalDist = Some(dist)
     else
       val nextBlzds = (blzds + 1) % nodes.length
       neighbors(u).filter(nodesToVisit(nextBlzds).contains).foreach(v =>
@@ -128,22 +134,46 @@ def dijkstraDist(nodes: IndexedSeq[Set[Vec]],
 
   goalDist.get
 
-val t1 = System.currentTimeMillis()
-val (part1, blzds1) = dijkstraDist(allPositionsAllCycles, startPos, targetPos, 0)
-s"t1: ${System.currentTimeMillis() - t1}ms"
+// returns distance (minutes) from start to goal
+def bfs(positions: IndexedSeq[Set[Vec]], start: Vec, goal: Vec, initialBlizzardState: Int = 0): Int =
+  def neighbors(pos: Vec): Seq[Vec] =
+    Seq(down, right, none, left, up)
+      .map(pos + _)
+      .filter(pos => pos.x >= 0 && pos.x < width
+        && (pos.y >= 0 || pos.y == startPos.y && pos.x == startPos.x)
+        && (pos.y < height || pos.y == targetPos.y && pos.x == targetPos.x)
+      )
 
-// val (part1, blzds1) = (322, 22)
+  iterate((Set(start), 0))((posns, round) => (
+    (for pos <- posns; n <- neighbors(pos) yield n).intersect(positions((initialBlizzardState + round + 1) % positions.length)),
+    round + 1
+  ))
+    .find((posns, _) => posns.contains(goal))
+    .map((_, round) => round)
+    .get
+
+// with dijkstra all parts take ~24 minutes
+// with bfs it's just ~300ms
+
+val t1 = System.currentTimeMillis()
+// val part1 = dijkstraDist(allPositionsAllCycles.map(_.toSet), startPos, targetPos)
+val part1 = bfs(allPositionsAllStates, startPos, targetPos)
+println(s"t1: ${System.currentTimeMillis() - t1}ms")
+
+// val part1 = 322
 
 // part 2
 val t2_1 = System.currentTimeMillis()
-val (part2_1, blzds2_1) = dijkstraDist(allPositionsAllCycles, targetPos, startPos, blzds1, Seq(up, left, none, right, down))
-s"t2_1: ${System.currentTimeMillis() - t2_1}ms"
+// val part2_1 = dijkstraDist(allPositionsAllCycles, targetPos, startPos, part1 % cycleLength, Seq(up, left, none, right, down))
+val part2_1 = bfs(allPositionsAllStates, targetPos, startPos, part1 % cycleLength)
+println(s"t2_1: ${System.currentTimeMillis() - t2_1}ms")
 
-// val (part2_1, blzds2_1) = (314, 36)
+// val part2_1 = 314
 
 val t2_2 = System.currentTimeMillis()
-val (part2_2, _) = dijkstraDist(allPositionsAllCycles, startPos, targetPos, blzds2_1)
-s"t2_2: ${System.currentTimeMillis() - t2_2}ms"
+// val part2_2 = dijkstraDist(allPositionsAllCycles, startPos, targetPos, (part1 + part2_1) % cycleLength)
+val part2_2 = bfs(allPositionsAllStates, startPos, targetPos, (part1 + part2_1) % cycleLength)
+println(s"t2_2: ${System.currentTimeMillis() - t2_2}ms")
 
 // val part2_2 = 338
 

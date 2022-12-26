@@ -23,8 +23,11 @@ val totalSurface = cubes.map(c => 6 - cubes.count(_.dist(c) == 1)).sum
 
 // determine boundaries of air around cubes,
 // must extend by 1 in each direction to fully enclose cubes at outer boundaries
-val min = Vec3(cubes.minBy(_.x).x - 1, cubes.minBy(_.y).y - 1, cubes.minBy(_.z).z - 1)
-val max = Vec3(cubes.maxBy(_.x).x + 1, cubes.maxBy(_.y).y + 1, cubes.maxBy(_.z).z + 1)
+val xs = cubes.map(_.x)
+val ys = cubes.map(_.y)
+val zs = cubes.map(_.z)
+val min = Vec3(xs.min - 1, ys.min - 1, zs.min - 1)
+val max = Vec3(xs.max + 1, ys.max + 1, zs.max + 1)
 
 // for easier containment checking, create a set from the seq of cubes
 val cubesSet = cubes.toSet

@@ -27,7 +27,7 @@ val allPathPoints = paths.map(path => path.tail
   .map((points, _) => points)
   .reduce(_ ++ _)
 
-val maxY = paths.flatten.maxBy(_.y).y
+val maxY = paths.flatten.map(_.y).max
 
 val Dummy = Vec(-1, -1) // guard
 val Start = Vec(500, 0)

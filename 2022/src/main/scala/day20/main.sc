@@ -24,7 +24,7 @@ def mix(min: Long, origNumbers: IndexedSeq[Num], input: IndexedSeq[Num]): Indexe
 
 // part 1
 
-val numbers = mix(origNumbers.minBy(_.n).n, origNumbers, origNumbers)
+val numbers = mix(origNumbers.map(_.n).min, origNumbers, origNumbers)
 
 val zero = numbers.indexWhere(_.n == 0)
 
@@ -39,7 +39,7 @@ z1000 + z2000 + z3000
 val origNumbersEnc = origNumbers.map(num => Num(num.n * 811589153L, num.i))
 
 val numbersEnc =
-  iterate(origNumbersEnc)(input => mix(origNumbersEnc.minBy(_.n).n, origNumbersEnc, input))
+  iterate(origNumbersEnc)(input => mix(origNumbersEnc.map(_.n).min, origNumbersEnc, input))
     .take(11)
     .last
 

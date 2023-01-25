@@ -82,7 +82,7 @@ val allPositions =
 
 // all free positions for every state
 val allPositionsAllStates: IndexedSeq[Set[Vec]] =
-  allBlizzardStates.map(blzds => allPositions.filter(p => !blzds.contains(p)).toSet)
+  allBlizzardStates.map(blzds => allPositions.filterNot(blzds.contains).toSet)
 
 println(s"t_init_positions: ${System.currentTimeMillis() - t_init}ms")
 

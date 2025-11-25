@@ -8,4 +8,4 @@ Notebooks created with Google Colaboratory - https://colab.research.google.com/.
 
 2021, 2024 - Input files for AoC [2021/](2021/) and [2024/](2024/) are expected in your Google Drive in `My Drive/AoC/2021/` and `My Drive/AoC/2024/`. Colab must be given permission to mount your Google Drive.
 
-2022 - Used Scala workshets instead of Python notebooks
+2022 - Used Scala worksheets instead of Python notebooks. Inputs not downloaded.
